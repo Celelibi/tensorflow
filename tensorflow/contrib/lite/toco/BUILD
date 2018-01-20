@@ -12,6 +12,7 @@ load(
     "tf_cc_binary",
     "tf_cc_test",
 )
+load("@local_config_cuda//cuda:build_defs.bzl", "if_cuda_is_configured")
 
 tf_proto_library_cc(
     name = "types_proto",
@@ -362,7 +363,10 @@ tf_cc_binary(
         ":types_proto_cc",
         "//tensorflow/core:lib",
         "@com_google_absl//absl/strings",
-    ],
+        ]
+        # For some reason this is needed at link-time if cudnn is not in the
+        # same directory as cudart
+        + if_cuda_is_configured(["@local_config_cuda//cuda:cudnn"]),
 )
 
 tf_cc_test(

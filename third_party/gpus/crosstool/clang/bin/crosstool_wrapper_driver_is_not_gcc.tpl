@@ -51,7 +51,7 @@ GCC_HOST_COMPILER_PATH = ('%{gcc_host_compiler_path}')
 
 NVCC_PATH = '%{nvcc_path}'
 PREFIX_DIR = os.path.dirname(GCC_HOST_COMPILER_PATH)
-NVCC_VERSION = '%{cuda_version}'
+NVCC_VERSION = '%{nvcc_version}'
 
 def Log(s):
   print('gpus/crosstool: {0}'.format(s))

@@ -842,6 +842,40 @@ def reformat_version_sequence(version_str, sequence_count):
   return '.'.join(v[:sequence_count])
 
 
+def set_tf_cuda_system(environ_cp):
+  """Set TF_CUDA_SYSTEM"""
+
+  # TODO: how does it work on non-Linux systems?
+  if not is_linux():
+      environ_cp['TF_CUDA_SYSTEM'] = '0'
+      return
+
+  # TODO: How to check if the lib is actually installed?
+
+  ask_system = 'Do you wish to use the system-installed CUDA SDK?'
+  ask_system_yes = 'Using the system-installed CUDA SDK'
+  ask_system_no = 'Using custom-installed CUDA SDK'
+  set_action_env_var(environ_cp, 'TF_CUDA_SYSTEM', None, True, ask_system,
+      ask_system_yes, ask_system_no)
+
+
+def set_tf_cudnn_system(environ_cp):
+  """Set TF_CUDNN_SYSTEM"""
+
+  # TODO: how does it work on non-Linux systems?
+  if not is_linux():
+      environ_cp['TF_CUDNN_SYSTEM'] = '0'
+      return
+
+  # TODO: How to check if the lib is actually installed?
+
+  ask_system = 'Do you wish to use the system-installed cuDNN library?'
+  ask_system_yes = 'Using the system-installed cuDNN library'
+  ask_system_no = 'Using custom-installed cuDNN library'
+  set_action_env_var(environ_cp, 'TF_CUDNN_SYSTEM', None, True, ask_system,
+      ask_system_yes, ask_system_no)
+
+
 def set_tf_cuda_version(environ_cp):
   """Set CUDA_TOOLKIT_PATH and TF_CUDA_VERSION."""
   ask_cuda_version = (
@@ -1145,7 +1179,7 @@ def set_tf_cuda_compute_capabilities(environ_cp):
         'https://developer.nvidia.com/cuda-gpus.\nPlease'
         ' note that each additional compute '
         'capability significantly increases your '
-        'build time and binary size. [Default is: %s]' %
+        'build time and binary size. [Default is: %s]: ' %
         default_cuda_compute_capabilities)
     tf_cuda_compute_capabilities = get_from_env_or_user_or_default(
         environ_cp, 'TF_CUDA_COMPUTE_CAPABILITIES',
@@ -1433,8 +1467,15 @@ def main():
   set_action_env_var(environ_cp, 'TF_NEED_CUDA', 'CUDA', False)
   if (environ_cp.get('TF_NEED_CUDA') == '1' and
       'TF_CUDA_CONFIG_REPO' not in environ_cp):
-    set_tf_cuda_version(environ_cp)
-    set_tf_cudnn_version(environ_cp)
+
+    set_tf_cuda_system(environ_cp)
+    if environ_cp.get('TF_CUDA_SYSTEM') != '1':
+        set_tf_cuda_version(environ_cp)
+
+    set_tf_cudnn_system(environ_cp)
+    if environ_cp.get('TF_CUDNN_SYSTEM') != '1':
+      set_tf_cudnn_version(environ_cp)
+
     if is_linux():
       set_tf_tensorrt_install_path(environ_cp)
     set_tf_cuda_compute_capabilities(environ_cp)

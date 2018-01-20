@@ -402,8 +402,7 @@ void WarnIfBadDriverJITVersion() {
 StatusOr<std::vector<uint8>> CompilePtx(const string& ptx, int cc_major,
                                         int cc_minor) {
   Tracing::TraceMe annotation("Compile PTX", /*is_expensive=*/true);
-  const string ptxas_path =
-      tensorflow::io::JoinPath(tensorflow::CudaRoot(), "bin", "ptxas");
+  const string ptxas_path = tensorflow::PtxasPath();
   VLOG(2) << "Using ptxas at " << ptxas_path;
   auto env = tensorflow::Env::Default();
   TF_RETURN_IF_ERROR(env->FileExists(ptxas_path));

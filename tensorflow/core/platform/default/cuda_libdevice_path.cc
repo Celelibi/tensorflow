@@ -24,9 +24,14 @@ limitations under the License.
 
 namespace tensorflow {
 
-string CudaRoot() {
-  VLOG(3) << "CUDA root = " << TF_CUDA_TOOLKIT_PATH;
-  return TF_CUDA_TOOLKIT_PATH;
+string LibdeviceRoot() {
+  VLOG(3) << "CUDA libdevice root = " << TF_CUDA_LIBDEVICE_ROOT;
+  return TF_CUDA_LIBDEVICE_ROOT;
+}
+
+string PtxasPath() {
+  VLOG(3) << "CUDA ptxas path = " << TF_CUDA_PTXAS_PATH;
+  return TF_CUDA_PTXAS_PATH;
 }
 
 }  // namespace tensorflow

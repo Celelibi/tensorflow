@@ -21,6 +21,7 @@ limitations under the License.
 #define TF_CUDA_VERSION "%{cuda_version}"
 #define TF_CUDNN_VERSION "%{cudnn_version}"
 
-#define TF_CUDA_TOOLKIT_PATH "%{cuda_toolkit_path}"
+#define TF_CUDA_LIBDEVICE_ROOT "%{cuda_libdevice_root}"
+#define TF_CUDA_PTXAS_PATH "%{cuda_ptxas_path}"
 
 #endif  // CUDA_CUDA_CONFIG_H_
