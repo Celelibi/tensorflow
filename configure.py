@@ -1108,8 +1108,12 @@ def get_native_cuda_compute_capabilities(environ_cp):
   Returns:
     string of native cuda compute capabilities, separated by comma.
   """
-  device_query_bin = os.path.join(
-      environ_cp.get('CUDA_TOOLKIT_PATH'), 'extras/demo_suite/deviceQuery')
+  cuda_toolkit_path = environ_cp.get('CUDA_TOOLKIT_PATH')
+  if cuda_toolkit_path is None:
+    return ''
+
+  device_query_bin = os.path.join(cuda_toolkit_path,
+      'extras/demo_suite/deviceQuery')
   if os.path.isfile(device_query_bin) and os.access(device_query_bin, os.X_OK):
     try:
       output = run_shell(device_query_bin).split('\n')
