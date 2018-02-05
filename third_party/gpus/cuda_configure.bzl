@@ -171,6 +171,25 @@ def _host_compiler_includes(repository_ctx, cc):
     inc_entries.append("  cxx_builtin_include_directory: \"%s\"" % inc_dir)
   return "\n".join(inc_entries)
 
+def _nvcc_path(repository_ctx, cpu_value, cuda_toolkit_path):
+  """Returns the path of nvcc.
+
+  Args:
+    repository_ctx: The repository context.
+    cpu_value: The name of the host operating system.
+    cuda_toolkit_path: The CUDA toolkit installation directory.
+
+  Returns:
+    A string containing the path to the nvcc binary.
+  """
+  ext = ".exe" if cpu_value == "Windows" else ""
+  nvcc_path = repository_ctx.path("%s/bin/nvcc%s" % (cuda_toolkit_path, ext))
+
+  if nvcc_path.exists:
+    return str(nvcc_path)
+
+  auto_configure_fail("Cannot find nvcc at %s" % str(nvcc_path))
+
 def _cuda_include_path(repository_ctx, cuda_config):
   """Generates the cxx_builtin_include_directory entries for cuda inc dirs.
 
@@ -183,9 +202,8 @@ def _cuda_include_path(repository_ctx, cuda_config):
     host compiler include directories, which can be added to the CROSSTOOL
     file.
   """
-  nvcc_path = repository_ctx.path("%s/bin/nvcc%s" %
-                                  (cuda_config.cuda_toolkit_path,
-                                   ".exe" if cuda_config.cpu_value == "Windows" else ""))
+  nvcc_path = _nvcc_path(repository_ctx, cuda_config.cpu_value,
+                         cuda_config.cuda_toolkit_path)
   result = repository_ctx.execute([nvcc_path, '-v',
                                   '/dev/null', '-o', '/dev/null'])
   target_dir = ""
@@ -286,11 +304,7 @@ def _cuda_version(repository_ctx, cuda_toolkit_path, cpu_value):
     String containing the version of CUDA.
   """
   # Run nvcc --version and find the line containing the CUDA version.
-  nvcc_path = repository_ctx.path("%s/bin/nvcc%s" %
-                                  (cuda_toolkit_path,
-                                   ".exe" if cpu_value == "Windows" else ""))
-  if not nvcc_path.exists:
-    auto_configure_fail("Cannot find nvcc at %s" % str(nvcc_path))
+  nvcc_path = _nvcc_path(repository_ctx, cpu_value, cuda_toolkit_path)
   result = repository_ctx.execute([str(nvcc_path), '--version'])
   if result.stderr:
     auto_configure_fail("Error running nvcc --version: %s" % result.stderr)
@@ -1014,9 +1028,8 @@ def _create_local_cuda_repository(repository_ctx):
     _tpl(repository_ctx, "crosstool:CROSSTOOL_clang", cuda_defines, out="crosstool/CROSSTOOL")
     repository_ctx.file("crosstool/clang/bin/crosstool_wrapper_driver_is_not_gcc", "")
   else:
-    nvcc_path = str(repository_ctx.path("%s/bin/nvcc%s" %
-        (cuda_config.cuda_toolkit_path,
-        ".exe" if cuda_config.cpu_value == "Windows" else "")))
+    nvcc_path = _nvcc_path(repository_ctx, cuda_config.cpu_value,
+                           cuda_config.cuda_toolkit_path)
     _tpl(repository_ctx, "crosstool:BUILD",
          {"%{linker_files}": ":crosstool_wrapper_driver_is_not_gcc"})
     _tpl(repository_ctx, "crosstool:CROSSTOOL_nvcc", cuda_defines, out="crosstool/CROSSTOOL")
