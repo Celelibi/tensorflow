@@ -628,6 +628,45 @@ def _find_libs(repository_ctx, cuda_config):
       "cupti": _find_cupti_lib(repository_ctx, cuda_config)
   }
 
+def _find_header_dir(repository_ctx, headers, dirs):
+  """Return the first path from dirs that contains all the headers looked for.
+  The standard header directories are always searched.
+
+  Args:
+    repository_ctx: The repository context.
+    headers: A list of headers to look for.
+    dirs: A list of directories to search.
+
+  Returns:
+    The first path of the directory containing all the files header.
+  """
+
+  for d in dirs:
+    failed = False
+    for h in headers:
+      if not repository_ctx.path(d + "/" + h).exists:
+        failed = True
+
+    if not failed:
+      return d
+
+  return None
+
+def _find_cuda_header_dir(repository_ctx, cuda_toolkit_path):
+  """Returns the path to the directory containing cuda.h
+
+  Args:
+    repository_ctx: The repository context.
+    cuda_toolkit_path: The cuda toolkit install directory.
+
+  Returns:
+    The path of the directory containing the cuda headers.
+  """
+  dirlist = [cuda_toolkit_path + "/include"]
+  res = _find_header_dir(repository_ctx, ["cuda.h"], dirlist)
+  if res != None:
+    return res
+  auto_configure_fail("Cannot find cuda.h under %s" % cuda_toolkit_path)
 
 def _find_cudnn_header_dir(repository_ctx, cudnn_install_basedir):
   """Returns the path to the directory containing cudnn.h
@@ -640,12 +679,10 @@ def _find_cudnn_header_dir(repository_ctx, cudnn_install_basedir):
   Returns:
     The path of the directory containing the cudnn header.
   """
-  if repository_ctx.path(cudnn_install_basedir + "/cudnn.h").exists:
-    return cudnn_install_basedir
-  if repository_ctx.path(cudnn_install_basedir + "/include/cudnn.h").exists:
-    return cudnn_install_basedir + "/include"
-  if repository_ctx.path("/usr/include/cudnn.h").exists:
-    return "/usr/include"
+  dirlist = [cudnn_install_basedir, cudnn_install_basedir + "/include"]
+  res = _find_header_dir(repository_ctx, ["cudnn.h"], dirlist)
+  if res != None:
+    return res
   auto_configure_fail("Cannot find cudnn.h under %s" % cudnn_install_basedir)
 
 
@@ -935,7 +972,7 @@ def _create_local_cuda_repository(repository_ctx):
   # symlinking. We create one genrule for each directory we want to track under
   # cuda_toolkit_path
   cuda_toolkit_path = cuda_config.cuda_toolkit_path
-  cuda_include_path = cuda_toolkit_path + "/include"
+  cuda_include_path = _find_cuda_header_dir(repository_ctx, cuda_toolkit_path)
   genrules = [symlink_genrule_for_dir(repository_ctx,
       cuda_include_path, "cuda/include", "cuda-include")]
   genrules.append(symlink_genrule_for_dir(repository_ctx,
