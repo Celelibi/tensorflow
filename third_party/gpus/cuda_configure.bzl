@@ -937,8 +937,17 @@ def _compute_cuda_extra_copts(repository_ctx, compute_capabilities):
 
 def _create_local_cuda_repository(repository_ctx):
   """Creates the repository containing files set up to build with CUDA."""
-  cuda_config = _get_cuda_config(repository_ctx)
+  is_cuda_clang = _use_cuda_clang(repository_ctx)
 
+  should_download_clang = is_cuda_clang and _flag_enabled(
+      repository_ctx, _TF_DOWNLOAD_CLANG)
+  if should_download_clang:
+    download_clang(repository_ctx, "crosstool/extra_tools")
+
+  cc = find_cc(repository_ctx)
+  cc_fullpath = cc if not should_download_clang else "crosstool/" + cc
+
+  cuda_config = _get_cuda_config(repository_ctx)
   cudnn_header_dir = _find_cudnn_header_dir(repository_ctx,
                                             cuda_config.cudnn_install_basedir)
 
@@ -1005,17 +1014,7 @@ def _create_local_cuda_repository(repository_ctx):
                                '        ":cudnn-include",')
        })
 
-  is_cuda_clang = _use_cuda_clang(repository_ctx)
-
-  should_download_clang = is_cuda_clang and _flag_enabled(
-      repository_ctx, _TF_DOWNLOAD_CLANG)
-  if should_download_clang:
-    download_clang(repository_ctx, "crosstool/extra_tools")
-
   # Set up crosstool/
-  cc = find_cc(repository_ctx)
-  cc_fullpath = cc if not should_download_clang else "crosstool/" + cc
-
   host_compiler_includes = _host_compiler_includes(repository_ctx, cc_fullpath)
   cuda_defines = {
            "%{cuda_include_path}": _cuda_include_path(repository_ctx,
