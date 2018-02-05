@@ -573,34 +573,21 @@ def _find_cupti_lib(repository_ctx, cuda_config):
   """
   file_name = _lib_name("cupti", cuda_config.cpu_value,
                         cuda_config.cuda_version)
+
+  ldsearch = []
   if cuda_config.cpu_value == "Linux":
-    path = repository_ctx.path(
-        "%s/extras/CUPTI/lib64/%s" % (cuda_config.cuda_toolkit_path, file_name))
-    if path.exists:
-      return struct(file_name=file_name, path=str(path.realpath))
-
-    path = repository_ctx.path(
-        "%s/lib/x86_64-linux-gnu/%s" % (cuda_config.cuda_toolkit_path,
-                                        file_name))
-    if path.exists:
-      return struct(file_name=file_name, path=str(path.realpath))
-
+    ldsearch.append(cuda_config.cuda_toolkit_path + "/extras/CUPTI/lib64")
+    ldsearch.append(cuda_config.cuda_toolkit_path + "/lib/x86_64-linux-gnu")
   elif cuda_config.cpu_value == "Windows":
-    path = repository_ctx.path(
-        "%s/extras/CUPTI/libx64/%s" %
-        (cuda_config.cuda_toolkit_path, file_name))
+    ldsearch.append(cuda_config.cuda_toolkit_path + "/extras/CUPTI/libx64")
+
+  ldsearch.append(cuda_config.cuda_toolkit_path + "/extras/CUPTI/lib")
+  ldsearch.append(cuda_config.cuda_toolkit_path + "/lib")
+
+  for d in ldsearch:
+    path = repository_ctx.path("%s/%s" % (d, file_name))
     if path.exists:
       return struct(file_name=file_name, path=str(path.realpath))
-
-  path = repository_ctx.path(
-      "%s/extras/CUPTI/lib/%s" % (cuda_config.cuda_toolkit_path, file_name))
-  if path.exists:
-    return struct(file_name=file_name, path=str(path.realpath))
-
-  path = repository_ctx.path(
-      "%s/lib/%s" % (cuda_config.cuda_toolkit_path, file_name))
-  if path.exists:
-    return struct(file_name=file_name, path=str(path.realpath))
 
   auto_configure_fail("Cannot find cupti library %s" % file_name)
 
