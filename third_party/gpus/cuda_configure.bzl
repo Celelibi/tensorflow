@@ -536,29 +536,22 @@ def _find_cuda_lib(lib, repository_ctx, cpu_value, basedir, version="",
       path: The full path to the library.
   """
   file_name = _lib_name(lib, cpu_value, version, static)
+
+  ldsearch = []
   if cpu_value == "Linux":
-    path = repository_ctx.path("%s/lib64/%s" % (basedir, file_name))
-    if path.exists:
-      return struct(file_name=file_name, path=str(path.realpath))
-    path = repository_ctx.path("%s/lib64/stubs/%s" % (basedir, file_name))
-    if path.exists:
-      return struct(file_name=file_name, path=str(path.realpath))
-    path = repository_ctx.path(
-        "%s/lib/x86_64-linux-gnu/%s" % (basedir, file_name))
-    if path.exists:
-      return struct(file_name=file_name, path=str(path.realpath))
-
+    ldsearch.append(basedir + "/lib64")
+    ldsearch.append(basedir + "/lib64/stubs")
+    ldsearch.append(basedir + "/lib/x86_64-linux-gnu")
   elif cpu_value == "Windows":
-    path = repository_ctx.path("%s/lib/x64/%s" % (basedir, file_name))
+      ldsearch.append(basedir + "/lib/x64")
+
+  ldsearch.append(basedir + "/lib")
+  ldsearch.append(basedir)
+
+  for d in ldsearch:
+    path = repository_ctx.path("%s/%s" % (d, file_name))
     if path.exists:
       return struct(file_name=file_name, path=str(path.realpath))
-
-  path = repository_ctx.path("%s/lib/%s" % (basedir, file_name))
-  if path.exists:
-    return struct(file_name=file_name, path=str(path.realpath))
-  path = repository_ctx.path("%s/%s" % (basedir, file_name))
-  if path.exists:
-    return struct(file_name=file_name, path=str(path.realpath))
 
   auto_configure_fail("Cannot find cuda library %s" % file_name)
 
